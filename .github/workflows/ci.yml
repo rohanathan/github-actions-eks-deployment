@@ -1,0 +1,93 @@
+name: CI - Test, Scan, Build & Push
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { node-version: [18.x, 20.x] }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install deps
+        working-directory: app
+        run: npm ci
+
+      - name: Lint
+        working-directory: app
+        run: npm run lint
+
+      - name: Test
+        working-directory: app
+        run: npm test -- --ci
+
+      - name: Upload coverage (optional)
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: app/coverage/lcov.info
+          fail_ci_if_error: false
+
+  fs-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+  build-and-push:
+    needs: [test-and-lint, fs-scan]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # OIDC
+      contents: read
+    env:
+      AWS_REGION: eu-west-2
+      ECR_REPO: 897545368009.dkr.ecr.eu-west-2.amazonaws.com/eks-demo-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::897545368009:role/gha-eks-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image (context=app/)
+        run: |
+          IMAGE=${{ env.ECR_REPO }}
+          TAG=${GITHUB_SHA::7}
+          docker build -f app/Dockerfile -t $IMAGE:$TAG -t $IMAGE:latest app
+          docker push $IMAGE:$TAG
+          docker push $IMAGE:latest
+
+      - name: Output image tag
+        run: echo "IMAGE=${{ env.ECR_REPO }}:${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
