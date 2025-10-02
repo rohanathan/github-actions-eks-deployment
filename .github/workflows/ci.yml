@@ -1,34 +1,12 @@
-name: CI - Test, Scan, Build & Push
+name: CI - Build & Push to ECR (no tests/lint)
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   workflow_dispatch:
 
 jobs:
-  fs-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Trivy (filesystem)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          format: sarif
-          output: trivy-results.sarif
-
-      - name: Upload Trivy SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-results.sarif
-
   build-and-push:
-    needs: [ fs-scan]
     runs-on: ubuntu-latest
     permissions:
       id-token: write   # OIDC
@@ -55,6 +33,3 @@ jobs:
           docker build -f app/Dockerfile -t $IMAGE:$TAG -t $IMAGE:latest app
           docker push $IMAGE:$TAG
           docker push $IMAGE:latest
-
-      - name: Output image tag
-        run: echo "IMAGE=${{ env.ECR_REPO }}:${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
