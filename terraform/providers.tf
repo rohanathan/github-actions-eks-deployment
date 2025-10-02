@@ -9,9 +9,17 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.5.1"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.23"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 3.0"
+    }
   }
 }
 
 provider "aws" {
-  region = "eu-west-2" # change if needed
+  region = "eu-west-2"
 }

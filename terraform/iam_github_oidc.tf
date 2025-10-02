@@ -1,16 +1,16 @@
 # --- Adjust these two to your repo ---
-variable "github_owner" { 
-    type = string 
-    default = "rohanathan" 
-    }
-variable "github_repo"  {
-    type = string 
-    default = "github-actions-eks-deployment" 
-    }
+variable "github_owner" {
+  type    = string
+  default = "rohanathan"
+}
+variable "github_repo" {
+  type    = string
+  default = "github-actions-eks-deployment"
+}
 
 # OIDC provider for GitHub Actions
 resource "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
+  url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
 
   # GitHub's well-known thumbprint (as of 2024/2025)
@@ -41,7 +41,7 @@ data "aws_iam_policy_document" "gha_trust" {
 # Permissions -> ECR push/pull + EKS describe
 data "aws_iam_policy_document" "gha_policy_doc" {
   statement {
-    sid     = "EcrPushPull"
+    sid = "EcrPushPull"
     actions = [
       "ecr:GetAuthorizationToken",
       "ecr:BatchCheckLayerAvailability",
@@ -55,8 +55,8 @@ data "aws_iam_policy_document" "gha_policy_doc" {
   }
 
   statement {
-    sid     = "EksDescribe"
-    actions = ["eks:DescribeCluster"]
+    sid       = "EksDescribe"
+    actions   = ["eks:DescribeCluster"]
     resources = ["*"]
   }
 }
