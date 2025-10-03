@@ -33,6 +33,16 @@ module "eks" {
         }
       ]
     }
+    # ✅ new — GitHub Actions OIDC role used by CD
+    gha_role = {
+      principal_arn = "arn:aws:iam::897545368009:role/gha-eks-deploy-role"
+      policy_associations = [
+        {
+          policy_arn  = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = { type = "cluster" }
+        }
+      ]
+    }
   }
 
 

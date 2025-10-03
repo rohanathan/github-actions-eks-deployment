@@ -44,4 +44,4 @@ jobs:
         run: kustomize build k8s/overlays/demo | kubectl apply -f -
 
       - name: Wait for rollout
-        run: kubectl rollout status deploy/node-app -n "$NAMESPACE" --timeout=180s
+        run: kubectl rollout status deploy/demo-node-app -n "$NAMESPACE" --timeout=180s
