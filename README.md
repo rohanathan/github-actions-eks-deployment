@@ -3,6 +3,8 @@
 This project demonstrates a **production-style CI/CD pipeline** for deploying containerized applications on **Amazon EKS**, built using **Terraform (IaC)**, **GitHub Actions**, and **Kustomize**.  
 It automates everything from infrastructure provisioning → container image build → Kubernetes deployment → ingress exposure.
 
+![Architecture Diagram](images/GHA_EKS_Architecture.png)
+
 
 ## Features Implemented (Phase-1)
 
