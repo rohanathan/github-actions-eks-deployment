@@ -5,7 +5,7 @@ module "eks" {
   cluster_name                   = "eks-demo-cluster"
   cluster_version                = "1.30"
   cluster_endpoint_public_access = true
-  enable_irsa                    = true # creates the cluster OIDC provider (IRSA-ready)
+  enable_irsa                    = true 
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.public_subnets
@@ -33,7 +33,7 @@ module "eks" {
         }
       ]
     }
-    # ✅ new — GitHub Actions OIDC role used by CD
+    # GitHub Actions OIDC role used by CD
     gha_role = {
       principal_arn = "arn:aws:iam::897545368009:role/gha-eks-deploy-role"
       policy_associations = [

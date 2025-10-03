@@ -1,4 +1,3 @@
-# --- Adjust these two to your repo ---
 variable "github_owner" {
   type    = string
   default = "rohanathan"
@@ -17,7 +16,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# Trust policy: allow ONLY your repo to assume the role via OIDC
+# Trust policy: allow repo to assume the role via OIDC
 data "aws_iam_policy_document" "gha_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -38,7 +37,7 @@ data "aws_iam_policy_document" "gha_trust" {
   }
 }
 
-# Permissions -> ECR push/pull + EKS describe
+# Permissions for ECR push/pull + EKS describe
 data "aws_iam_policy_document" "gha_policy_doc" {
   statement {
     sid = "EcrPushPull"

@@ -1,4 +1,4 @@
-# ===== EKS cluster connection (no local kubeconfig needed) =====
+# EKS cluster connection
 data "aws_eks_cluster" "this" {
   name = module.eks.cluster_name
 }
@@ -21,7 +21,7 @@ provider "helm" {
   }
 }
 
-# ===== NGINX Ingress Controller =====
+# NGINX Ingress Controller
 resource "helm_release" "ingress_nginx" {
   name             = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
