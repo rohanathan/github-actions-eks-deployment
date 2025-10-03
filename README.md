@@ -3,9 +3,8 @@
 This project demonstrates a **production-style CI/CD pipeline** for deploying containerized applications on **Amazon EKS**, built using **Terraform (IaC)**, **GitHub Actions**, and **Kustomize**.  
 It automates everything from infrastructure provisioning → container image build → Kubernetes deployment → ingress exposure.
 
----
 
-## 📌 Features Implemented (Phase-1)
+## Features Implemented (Phase-1)
 
 - Infrastructure provisioned with **Terraform**:
     
@@ -29,9 +28,6 @@ It automates everything from infrastructure provisioning → container image bui
         
     - Service exposed through **AWS NLB** with public DNS.
         
-
----
-
 
 ## Workflow Overview
 
@@ -61,8 +57,6 @@ It automates everything from infrastructure provisioning → container image bui
         
     - LoadBalancer DNS created in AWS → accessible endpoint.
         
-
----
 
 ## How to Run
 
@@ -95,5 +89,3 @@ It automates everything from infrastructure provisioning → container image bui
     
     Copy the **NLB DNS** to access the app.
     
-
----
