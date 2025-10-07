@@ -96,7 +96,7 @@ const server = http.createServer(function(request, response) {
         </head>
         <body>
           <div class="container">
-            <h1>Calculator App</h1>
+            <h1>Calculator App v3</h1>
             <h3>Input comma separated integers to add.</h3>
             <form method="post" action="/">
               <div>
