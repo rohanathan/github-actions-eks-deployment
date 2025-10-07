@@ -18,21 +18,21 @@ jobs:
       GITOPS_FILE: eks-demo-gitops/overlays/demo/kustomization.yaml
 
     steps:
-      # 1️⃣  Checkout CI repo
+      # 1️ Checkout CI repo
       - uses: actions/checkout@v4
 
-      # 2️⃣  Configure AWS creds via OIDC
+      # 2️ Configure AWS creds via OIDC
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::897545368009:role/gha-eks-deploy-role
           aws-region: ${{ env.AWS_REGION }}
 
-      # 3️⃣  Login to ECR
+      # 3 Login to ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4️⃣  Build & push image
+      # 4 Build & push image
       - name: Build and push image
         run: |
           IMAGE=${{ env.ECR_REPO }}
@@ -42,7 +42,7 @@ jobs:
           docker push $IMAGE:latest
           echo "TAG=$TAG" >> $GITHUB_ENV
 
-      # 5️⃣  Prepare SSH for GitOps repo
+      # 5️ Prepare SSH for GitOps repo
       - name: Setup SSH for GitOps push
         run: |
           mkdir -p ~/.ssh
@@ -51,14 +51,14 @@ jobs:
           echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile ~/.ssh/gitops_deploy_ed25519\n" >> ~/.ssh/config
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      # 6️⃣  Clone GitOps repo
+      # 6️ Clone GitOps repo
       - name: Checkout GitOps repo
         run: |
           git clone --depth 1 --branch main ${{ env.GITOPS_REPO }} gitops
           cd gitops
           echo "TAG=${{ env.TAG }}"
 
-      # 7️⃣  Bump image tag in kustomization.yaml
+      # 7️ Bump image tag in kustomization.yaml
       - name: Update image tag
         run: |
           cd gitops
@@ -69,7 +69,7 @@ jobs:
           echo "Updated $FILE → ${TAG}"
           git diff
 
-      # 8️⃣  Commit & push
+      # 8️ Commit & push
       - name: Commit and push update
         run: |
           cd gitops

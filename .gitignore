@@ -1,5 +1,6 @@
 terraform/.terraform/*
 
+.github/workflows/cd.yml
 
 # Dependencies
 app/node_modules/*
