@@ -5,7 +5,3 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
-
-images:
-  - name: 897545368009.dkr.ecr.eu-west-2.amazonaws.com/eks-demo-app
-    newTag: latest
