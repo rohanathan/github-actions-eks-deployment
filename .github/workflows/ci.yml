@@ -1,4 +1,4 @@
-name: CI - Build & Push to ECR (GitOps bump)
+name: CI – Build, Push & GitOps Hand-off
 
 on:
   push:
@@ -6,59 +6,80 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push:
+  build-and-update:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write        # OIDC to assume AWS role
-      contents: read         # read this repo
+      id-token: write          # OIDC for AWS
+      contents: read
     env:
       AWS_REGION: eu-west-2
       ECR_REPO: 897545368009.dkr.ecr.eu-west-2.amazonaws.com/eks-demo-app
-      GITOPS_REPO: rohanathan/eks-gha-gitops
+      GITOPS_REPO: git@github.com:rohanathan/eks-gha-gitops.git
       GITOPS_FILE: eks-demo-gitops/overlays/demo/kustomization.yaml
 
     steps:
-      - name: Checkout app repo
-        uses: actions/checkout@v4
+      # 1️⃣  Checkout CI repo
+      - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
+      # 2️⃣  Configure AWS creds via OIDC
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::897545368009:role/gha-eks-deploy-role
           aws-region: ${{ env.AWS_REGION }}
 
+      # 3️⃣  Login to ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & push image (context=app/)
-        id: build
+      # 4️⃣  Build & push image
+      - name: Build and push image
         run: |
-          IMAGE="${{ env.ECR_REPO }}"
-          TAG="${GITHUB_SHA::7}"
-          docker build -f app/Dockerfile -t "${IMAGE}:${TAG}" -t "${IMAGE}:latest" app
-          docker push "${IMAGE}:${TAG}"
-          docker push "${IMAGE}:latest"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          IMAGE=${{ env.ECR_REPO }}
+          TAG=${GITHUB_SHA::7}
+          docker build -f app/Dockerfile -t $IMAGE:$TAG -t $IMAGE:latest app
+          docker push $IMAGE:$TAG
+          docker push $IMAGE:latest
+          echo "TAG=$TAG" >> $GITHUB_ENV
 
-      # --- GitOps bump via SSH deploy key ---
-      - name: Checkout GitOps repo (SSH)
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.GITOPS_REPO }}
-          ssh-key: ${{ secrets.GITOPS_DEPLOY_KEY }}
-          path: gitops
-          persist-credentials: false
-
-      - name: Update image tag in GitOps kustomization.yaml
-        working-directory: gitops
+      # 5️⃣  Prepare SSH for GitOps repo
+      - name: Setup SSH for GitOps push
         run: |
-          FILE="${GITOPS_FILE}"
-          TAG="${{ steps.build.outputs.tag }}"
-          # replace the 'newTag:' line under your image
-          sed -i -E "s/^\s*newTag:\s*.*/newTag: ${TAG}/" "${FILE}"
-          echo "Bumped ${FILE} to tag ${TAG}"
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add "${FILE}"
-          git commit -m "GitOps: set eks-demo-app tag to ${TAG}" || echo "No changes to commit"
-          git push origin HEAD:main
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITOPS_DEPLOY_KEY }}" > ~/.ssh/gitops_deploy_ed25519
+          chmod 600 ~/.ssh/gitops_deploy_ed25519
+          echo -e "Host github.com\n\tStrictHostKeyChecking no\n\tIdentityFile ~/.ssh/gitops_deploy_ed25519\n" >> ~/.ssh/config
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      # 6️⃣  Clone GitOps repo
+      - name: Checkout GitOps repo
+        run: |
+          git clone --depth 1 --branch main ${{ env.GITOPS_REPO }} gitops
+          cd gitops
+          echo "TAG=${{ env.TAG }}"
+
+      # 7️⃣  Bump image tag in kustomization.yaml
+      - name: Update image tag
+        run: |
+          cd gitops
+          FILE=${{ env.GITOPS_FILE }}
+          OLD_TAG=$(grep -A1 "name: ${{ env.ECR_REPO }}" $FILE | tail -n1 | awk '{print $2}')
+          echo "Old tag: $OLD_TAG"
+          yq -i ".images[0].newTag = \"${TAG}\"" $FILE
+          echo "Updated $FILE → ${TAG}"
+          git diff
+
+      # 8️⃣  Commit & push
+      - name: Commit and push update
+        run: |
+          cd gitops
+          git config user.email "github-actions@users.noreply.github.com"
+          git config user.name "GitHub Actions"
+          git add ${{ env.GITOPS_FILE }}
+          if ! git diff --cached --quiet; then
+            git commit -m "ci: update image tag to ${TAG}"
+            git push origin main
+            echo "Updated image tag ${TAG} pushed to GitOps repo"
+          else
+            echo "No changes to commit."
+          fi
