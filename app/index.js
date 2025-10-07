@@ -64,7 +64,7 @@ const server = http.createServer(function(request, response) {
           <html>
             <body>
               <h3>Result: ${result}</h3>
-              <a href="/">Back to Calculator</a>
+              <a href="/">Return to Calculator</a>
             </body>
           </html>
         `)
@@ -74,7 +74,7 @@ const server = http.createServer(function(request, response) {
           <html>
             <body>
               <h3>Error: ${error.message}</h3>
-              <a href="/">Back to Calculator</a>
+              <a href="/">Return to Calculator</a>
             </body>
           </html>
         `)
